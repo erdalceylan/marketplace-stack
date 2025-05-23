@@ -1,0 +1,9 @@
+[submodule "submodules/elastic"]
+	path = submodules/elastic
+	url = git@github.com:erdalceylan/marketplace-elastic.git
+[submodule "submodules/core"]
+	path = submodules/core
+	url = git@github.com:erdalceylan/marketplace-core.git
+[submodule "submodules/customer"]
+	path = submodules/customer
+	url = git@github.com:erdalceylan/marketplace-customer.git
