@@ -35,7 +35,7 @@ docker compose up -d
 ```
 
 ### Not
-trendyol üzerinden ürünleri çekerek sistemi deneyebilirsini
+trendyol üzerinden ürünleri çekerek sistemi deneyebilirsiniz.
 
  ```bash
  
