@@ -126,7 +126,7 @@ services:
       - kafka
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace?createDatabaseIfNotExist=true
 
   marketplace-customer:
     build:
