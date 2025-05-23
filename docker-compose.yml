@@ -17,7 +17,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093" #cluster mekanizması yönetimi
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL_PLAINTEXT://:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://:9092,EXTERNAL_PLAINTEXT://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL_PLAINTEXT://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL_PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -66,6 +66,12 @@ services:
     networks:
       - marketplace-network
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health?wait_for_status=yellow || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 20 # 20 kez tekrarla
+      start_period: 30s
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.2
@@ -92,6 +98,50 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  marketplace-elastic:
+    build:
+      context: ./submodules/elastic
+    ports:
+      - "8082:8082"
+    networks:
+      - marketplace-network
+    depends_on:
+      elasticsearch:
+        condition: service_healthy #elasticsearch'in sağlıklı olmasını bekler
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  marketplace-core:
+    build:
+      context: ./submodules/core
+    ports:
+      - "8081:8081"
+    networks:
+      - marketplace-network
+    depends_on:
+      - mysql
+      - kafka
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/marketplace
+
+  marketplace-customer:
+    build:
+      context: ./submodules/customer
+    ports:
+      - "8080:8080"
+    networks:
+      - marketplace-network
+    depends_on:
+      - marketplace-elastic
+      - marketplace-core
+    environment:
+      APP_ELASTIC_URL: http://marketplace-elastic:8082
+      APP_CORE_URL: http://marketplace-core:8081
+
 volumes:
   kafka_data:
   esdata:
@@ -102,3 +152,4 @@ networks:
   marketplace-network:
     name: marketplace-network
     driver: bridge
+
